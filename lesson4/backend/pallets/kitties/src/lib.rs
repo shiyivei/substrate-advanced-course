@@ -172,23 +172,37 @@ pub mod pallet {
 	// 沉睡8000ms，根据block number 奇偶性确定kitty id
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
+			log::info!("Hello World from offchain workers!: {:?}", block_number);
+
+			// 获取key
 			let key = Self::derived_key(block_number);
+
+			// 声明链下存储
 			let storage_ref = StorageValueRef::persistent(&key);
 
 			if let Ok(Some(data)) = storage_ref.get::<IndexingData<T>>() {
 				// Sleep 8000ms to simulate heavy calculation for kitty asset index.
+				log::info!("It needs a lot of time to create a kitty {:?}", block_number);
 				let timeout = sp_io::offchain::timestamp()
 					.add(sp_runtime::offchain::Duration::from_millis(8000));
 				sp_io::offchain::sleep_until(timeout);
 
+				log::info!("new kitty has been created and stored both onchain and offchain");
+
 				let kitty_id = data.0.into();
 
+				log::info!("get kitty index from offchain {:?}", kitty_id);
+
 				if block_number % 2u32.into() != Zero::zero() {
-					_ = Self::send_signed_tx(kitty_id, 1);
+					_ = Self::send_signed_tx(kitty_id, 10);
+					log::info!("now the block number is odd, let's update kitty's asset as 10, and kitty id is {:?}",kitty_id);
 				} else {
-					_ = Self::send_signed_tx(kitty_id, 2);
+					_ = Self::send_signed_tx(kitty_id, 20);
+					log::info!("now the block number is even, let's update kitty's asset as 20, and kitty id is {:?}",kitty_id);
 				}
 			}
+
+			log::info!("Leave from offchain workers!: {:?}", block_number);
 		}
 	}
 
@@ -226,7 +240,7 @@ pub mod pallet {
 
 			//获取下一个kitty的id
 			let next_kitty_id = kitty_id
-				.checked_add(&(T::KittyIndex::from(1_u32)))
+				.checked_add(&(T::KittyIndex::from(1_u8)))
 				.ok_or(Error::<T>::KittyIdOverflow)
 				.unwrap();
 
@@ -238,6 +252,7 @@ pub mod pallet {
 				Ok::<(), DispatchError>(())
 			})?;
 
+			// 同时把数据存到链下存储中
 			Self::save_kitty_to_indexing(kitty_id);
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id, kitty));
@@ -415,10 +430,12 @@ pub mod pallet {
 			})
 		}
 
+		// 写入存储
 		fn save_kitty_to_indexing(kitty_id: T::KittyIndex) {
 			let key = Self::derived_key(frame_system::Pallet::<T>::block_number());
 			let data: IndexingData<T> = IndexingData(kitty_id);
 			offchain_index::set(&key, &data.encode());
+			log::info!("kitty id has stored in offchain storage");
 		}
 
 		fn send_signed_tx(kitty_id: T::KittyIndex, payload: u32) -> Result<(), &'static str> {
@@ -429,6 +446,7 @@ pub mod pallet {
 				);
 			}
 
+			// update_kitty info
 			let results = signer.send_signed_transaction(|_account| Call::update_kitty {
 				kitty_id,
 				asset: payload,
