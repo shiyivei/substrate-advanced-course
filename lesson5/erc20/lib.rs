@@ -5,7 +5,6 @@
 
 #[ink::contract]
 mod erc20 {
-    // 8个方法两个event
 
     use ink::storage::Mapping;
 
