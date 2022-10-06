@@ -1,0 +1,3 @@
+[submodule "lesson5/lesson5/substrate-contracts-node"]
+	path = lesson5/lesson5/substrate-contracts-node
+	url = https://github.com/paritytech/substrate-contracts-node
