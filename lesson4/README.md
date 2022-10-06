@@ -1,10 +1,10 @@
 1. 在 Offchain Worker 中，使用 Offchain Indexing 特性实现从链上向 Offchain Storage 中写入数据
 
-https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/02.png?raw=true
+![image](https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/02.png)
 
 2. 使用 js sdk 从浏览器 frontend 获取到前面写入 Offchain Storage 的数据
 
-https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/03.png?raw=true
+![image](https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/03.png)
 
 1. 回答链上随机数（如前面Kitties示例中）与链下随机数的区别
 
@@ -24,12 +24,12 @@ https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static
 
 上述功能已经实现过程：每当新建/繁殖新的kitty后，kitty id同时会被保存到链下存储，链下工作机接着读取链下存储，并且按条件更新对应kitty的链上信息
 
-https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/02.png?raw=true
+![image](https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/02.png)
 
-https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/03.png?raw=true
+![image](https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/03.png)
 
-https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/04.png?raw=true
+![image](https://github.com/shiyivei/substrate-advanced-course/blob/master/lesson4/static/04.png)
 
 1. （可选）如果有时间，可以实现一个上述原型
 
-##  
+## 
