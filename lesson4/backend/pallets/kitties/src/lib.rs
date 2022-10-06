@@ -69,6 +69,24 @@ pub mod pallet {
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+	//定义类型(类型别名，在业务中易于识别),本来这个类型我们是定义在trait外部的，但是现在改为定义在trait内部，然后用的时候指定
+	// type KittyIndex = u32;
+
+	//定义函数
+	//函数要使用trait中的关联类型，必须先为定义trait为泛型约束
+	#[pallet::type_value]
+	pub fn GetDefaultValue<T: Config>() -> T::KittyIndex {
+		//取0
+		0_u8.into()
+	}
+
+	//定义业务数据
+	#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+	pub struct Kitty {
+		pub dna: [u8; 16],
+		pub asset: u32,
+	}
+
 	//定义接口
 	#[pallet::config]
 	pub trait Config: frame_system::Config + CreateSignedTransaction<Call<Self>> {
@@ -90,24 +108,6 @@ pub mod pallet {
 		type KittyPrice: Get<BalanceOf<Self>>;
 
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
-	}
-
-	//定义类型(类型别名，在业务中易于识别),本来这个类型我们是定义在trait外部的，但是现在改为定义在trait内部，然后用的时候指定
-	// type KittyIndex = u32;
-
-	//定义函数
-	//函数要使用trait中的关联类型，必须先为定义trait为泛型约束
-	#[pallet::type_value]
-	pub fn GetDefaultValue<T: Config>() -> T::KittyIndex {
-		//取0
-		0_u8.into()
-	}
-
-	//定义业务数据
-	#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
-	pub struct Kitty {
-		pub dna: [u8; 16],
-		pub asset: u32,
 	}
 
 	//定义Pallet结构体
@@ -166,6 +166,7 @@ pub mod pallet {
 	const ONCHAIN_TX_KEY: &[u8] = b"kitty_pallet::indexing01";
 
 	#[derive(Debug, Encode, Decode, Default)]
+	// struct IndexingData<T: Config>(T::KittyIndex);
 	struct IndexingData<T: Config>(T::KittyIndex);
 
 	#[pallet::hooks]
@@ -177,10 +178,14 @@ pub mod pallet {
 			// 获取key
 			let key = Self::derived_key(block_number);
 
-			// 声明链下存储
-			let storage_ref = StorageValueRef::persistent(&key);
+			// log::info!("the new store key is {:?}", key);
 
-			if let Ok(Some(data)) = storage_ref.get::<IndexingData<T>>() {
+			// 读取存储内容
+			let storage_content = StorageValueRef::persistent(&key);
+
+			//读取内容并更新
+			if let Ok(Some(data)) = storage_content.get::<IndexingData<T>>() {
+				// if let Some((Some(data)) = storage_ref.get::<IndexingData>() {
 				// Sleep 8000ms to simulate heavy calculation for kitty asset index.
 				log::info!("It needs a lot of time to create a kitty {:?}", block_number);
 				let timeout = sp_io::offchain::timestamp()
@@ -194,12 +199,14 @@ pub mod pallet {
 				log::info!("get kitty index from offchain {:?}", kitty_id);
 
 				if block_number % 2u32.into() != Zero::zero() {
-					_ = Self::send_signed_tx(kitty_id, 10);
-					log::info!("now the block number is odd, let's update kitty's asset as 10, and kitty id is {:?}",kitty_id);
+					_ = Self::send_signed_tx(kitty_id, 100);
+					log::info!("now the block number is odd, let's update kitty's asset as 100, and kitty id is {:?}",kitty_id);
 				} else {
-					_ = Self::send_signed_tx(kitty_id, 20);
-					log::info!("now the block number is even, let's update kitty's asset as 20, and kitty id is {:?}",kitty_id);
+					_ = Self::send_signed_tx(kitty_id, 200);
+					log::info!("now the block number is even, let's update kitty's asset as 200, and kitty id is {:?}",kitty_id);
 				}
+			} else {
+				log::info!("No off-chain indexing data retrieved.");
 			}
 
 			log::info!("Leave from offchain workers!: {:?}", block_number);
@@ -253,7 +260,7 @@ pub mod pallet {
 			})?;
 
 			// 同时把数据存到链下存储中
-			Self::save_kitty_to_indexing(kitty_id);
+			Self::store_kitty_to_indexing(kitty_id);
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id, kitty));
 
@@ -319,7 +326,7 @@ pub mod pallet {
 				Ok::<(), DispatchError>(())
 			})?;
 
-			Self::save_kitty_to_indexing(kitty_id);
+			Self::store_kitty_to_indexing(kitty_id);
 
 			Self::deposit_event(Event::KittyBred(who, kitty_id, new_kitty));
 
@@ -431,11 +438,14 @@ pub mod pallet {
 		}
 
 		// 写入存储
-		fn save_kitty_to_indexing(kitty_id: T::KittyIndex) {
+		fn store_kitty_to_indexing(kitty_id: T::KittyIndex) {
 			let key = Self::derived_key(frame_system::Pallet::<T>::block_number());
+
+			// log::info!("the store key is {:?}", key);
+
 			let data: IndexingData<T> = IndexingData(kitty_id);
 			offchain_index::set(&key, &data.encode());
-			log::info!("kitty id has stored in offchain storage");
+			log::info!("kitty id has been stored in offchain storage:{:?}", kitty_id);
 		}
 
 		fn send_signed_tx(kitty_id: T::KittyIndex, payload: u32) -> Result<(), &'static str> {
@@ -446,6 +456,7 @@ pub mod pallet {
 				);
 			}
 
+			log::info!("updating kitty asset, {:?}", kitty_id);
 			// update_kitty info
 			let results = signer.send_signed_transaction(|_account| Call::update_kitty {
 				kitty_id,
