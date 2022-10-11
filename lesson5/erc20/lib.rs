@@ -1,8 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// use ink_lang as ink;
-// use scale::{Decode, Encode};
-
 #[ink::contract]
 mod erc20 {
 
@@ -73,12 +70,6 @@ mod erc20 {
 
         #[ink(message)]
         pub fn balance_of(&self, who: AccountId) -> Balance {
-            // let balance = self.balances.get(&who).unwrap_or_default();
-
-            // ink::env::debug_println!("balance of account: {:?} | Balance: {:?}", who, balance);
-
-            // balance.unwrap_or_default()
-
             self.balances.get(&who).unwrap_or_default()
         }
 
@@ -127,8 +118,6 @@ mod erc20 {
 
             self.inner_transfer(from, to, amount)?;
             self.approval.insert(&(from, caller), &(approval - amount));
-
-            // let balance = self.balances.get(&who).unwrap_or_default();
 
             self.approval.insert(&(from, caller), &(approval - amount));
 
