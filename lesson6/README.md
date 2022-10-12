@@ -15,9 +15,3 @@ shiyivei-staging-raw.json
 ```
 
 3. -（附加题）根据 Chain Spec，部署公开测试网络
-
-```
-./substrate-stencil/xiankun-testnet-config.md
-./substrate-stencil/node/src/chain_spec.rs
-./substrate-stencil/node/src/command.rs
-```
